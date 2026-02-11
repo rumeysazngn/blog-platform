@@ -1,0 +1,299 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Kullanici {
+  kullanici_id                                                  Int                          @id @default(autoincrement())
+  kullanici_adi                                                 String                       @unique @db.VarChar(50)
+  tam_ad                                                        String?                      @db.VarChar(100)
+  email                                                         String                       @unique @db.VarChar(100)
+  biyografi                                                     String?
+  profil_pic                                                    String?                      @db.VarChar(255)
+  sifre                                                         String                       @db.VarChar(255)
+  rol                                                           String?                      @default("okuyucu") @db.VarChar(20)
+  aktif_mi                                                      Boolean?                     @default(true)
+  son_giris_tarihi                                              DateTime?                    @db.Timestamp(6)
+  dogrulanmis_mi                                                Boolean?                     @default(false)
+  olusturma_tarihi                                              DateTime?                    @default(now()) @db.Timestamp(6)
+  guncellenme_tarihi                                            DateTime?                    @default(now()) @db.Timestamp(6)
+  begeniler                                                     Begeni[]
+  bildirimler_bildirimler_kullanici_idTokullanicilar            bildirimler[]                @relation("bildirimler_kullanici_idTokullanicilar")
+  bildirimler_bildirimler_tetikleyen_kullanici_idTokullanicilar bildirimler[]                @relation("bildirimler_tetikleyen_kullanici_idTokullanicilar")
+  kullanici_aktivite_loglari                                    kullanici_aktivite_loglari[]
+  okuma_listeleri                                               okuma_listeleri[]
+  raporlar_raporlar_inceleyen_idTokullanicilar                  raporlar[]                   @relation("raporlar_inceleyen_idTokullanicilar")
+  raporlar_raporlar_raporlayan_idTokullanicilar                 raporlar[]                   @relation("raporlar_raporlayan_idTokullanicilar")
+  takipler_takipler_takip_edilen_idTokullanicilar               Takip[]                      @relation("takipler_takip_edilen_idTokullanicilar")
+  takipler_takipler_takipci_idTokullanicilar                    Takip[]                      @relation("takipler_takipci_idTokullanicilar")
+  yazilar                                                       Yazi[]
+  yorumlar                                                      Yorum[]
+  sifreResetler                                                 SifreReset[]
+
+  @@index([email], map: "idx_kullanicilar_email")
+  @@index([kullanici_adi], map: "idx_kullanicilar_kullanici_adi")
+  @@index([rol], map: "idx_kullanicilar_rol")
+  @@map("kullanicilar")
+}
+
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model Yazi {
+  yazi_id                                                 Int                          @id @default(autoincrement())
+  yazar_id                                                Int
+  kategori_id                                             Int?
+  baslik                                                  String                       @db.VarChar(200)
+  slug                                                    String                       @unique @db.VarChar(250)
+  alt_baslik                                              String?                      @db.VarChar(300)
+  icerik                                                  String
+  kapak_resmi                                             String?                      @db.VarChar(500)
+  durum                                                   String?                      @default("taslak") @db.VarChar(20)
+  okuma_suresi                                            Int?
+  goruntulenme_sayisi                                     Int?                         @default(0)
+  begeni_sayisi                                           Int?                         @default(0)
+  yorum_sayisi                                            Int?                         @default(0)
+  onecikartilmis_mi                                       Boolean?                     @default(false)
+  yayinlanma_tarihi                                       DateTime?                    @db.Timestamp(6)
+  olusturma_tarihi                                        DateTime?                    @default(now()) @db.Timestamp(6)
+  guncelleme_tarihi                                       DateTime?                    @default(now()) @db.Timestamp(6)
+  begeniler                                               Begeni[]
+  bildirimler                                             bildirimler[]
+  kullanici_aktivite_loglari                              kullanici_aktivite_loglari[]
+  okuma_listeleri                                         okuma_listeleri[]
+  raporlar                                                raporlar[]
+  yazi_etiketleri                                         yazi_etiketleri[]
+  yazi_kategorileri                                       yazi_kategorileri[]
+  yazi_onerileri_yazi_onerileri_onerilen_yazi_idToyazilar yazi_onerileri[]             @relation("yazi_onerileri_onerilen_yazi_idToyazilar")
+  yazi_onerileri_yazi_onerileri_yazi_idToyazilar          yazi_onerileri[]             @relation("yazi_onerileri_yazi_idToyazilar")
+  kategoriler                                             Kategori?                    @relation(fields: [kategori_id], references: [kategori_id], onUpdate: NoAction)
+  kullanicilar                                            Kullanici                    @relation(fields: [yazar_id], references: [kullanici_id], onDelete: Cascade, onUpdate: NoAction)
+  yorumlar                                                Yorum[]
+
+  @@index([begeni_sayisi(sort: Desc)], map: "idx_yazilar_begeni")
+  @@index([durum], map: "idx_yazilar_durum")
+  @@index([goruntulenme_sayisi(sort: Desc)], map: "idx_yazilar_goruntulenme")
+  @@index([kategori_id], map: "idx_yazilar_kategori")
+  @@index([slug], map: "idx_yazilar_slug")
+  @@index([yayinlanma_tarihi(sort: Desc)], map: "idx_yazilar_yayinlanma")
+  @@index([yazar_id], map: "idx_yazilar_yazar")
+  @@map("yazilar")
+}
+
+model Yorum {
+  yorum_id          Int           @id @default(autoincrement())
+  yazi_id           Int
+  yazar_id          Int
+  ust_yorum_id      Int?
+  yorum_icerigi     String
+  begeni_sayisi     Int?          @default(0)
+  duzenlendi_mi     Boolean?      @default(false)
+  silindi_mi        Boolean?      @default(false)
+  olusturma_tarihi  DateTime?     @default(now()) @db.Timestamp(6)
+  guncelleme_tarihi DateTime?     @default(now()) @db.Timestamp(6)
+  begeniler         Begeni[]
+  bildirimler       bildirimler[]
+  raporlar          raporlar[]
+  yorumlar          Yorum?        @relation("yorumlarToyorumlar", fields: [ust_yorum_id], references: [yorum_id], onDelete: Cascade, onUpdate: NoAction)
+  other_yorumlar    Yorum[]       @relation("yorumlarToyorumlar")
+  kullanicilar      Kullanici     @relation(fields: [yazar_id], references: [kullanici_id], onDelete: Cascade, onUpdate: NoAction)
+  yazilar           Yazi          @relation(fields: [yazi_id], references: [yazi_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([olusturma_tarihi(sort: Desc)], map: "idx_yorumlar_olusturma")
+  @@index([ust_yorum_id], map: "idx_yorumlar_ust_yorum")
+  @@index([yazar_id], map: "idx_yorumlar_yazar")
+  @@index([yazi_id], map: "idx_yorumlar_yazi")
+  @@map("yorumlar")
+}
+
+model Kategori {
+  kategori_id                Int                          @id @default(autoincrement())
+  ad                         String                       @unique @db.VarChar(100)
+  slug                       String                       @unique @db.VarChar(100)
+  aciklama                   String?
+  ikon                       String?                      @db.VarChar(100)
+  siralama                   Int?                         @default(0)
+  olusturma_tarihi           DateTime?                    @default(now()) @db.Timestamp(6)
+  kullanici_aktivite_loglari kullanici_aktivite_loglari[]
+  yazi_kategorileri          yazi_kategorileri[]
+  yazilar                    Yazi[]
+
+  @@index([slug], map: "idx_kategoriler_slug")
+  @@map("kategoriler")
+}
+
+model Etiket {
+  etiket_id        Int               @id @default(autoincrement())
+  etiket_adi       String            @unique @db.VarChar(50)
+  slug             String            @unique @db.VarChar(50)
+  kullanim_sayisi  Int?              @default(0)
+  olusturma_tarihi DateTime?         @default(now()) @db.Timestamp(6)
+  yazi_etiketleri  yazi_etiketleri[]
+
+  @@index([etiket_adi], map: "idx_etiketler_ad")
+  @@index([kullanim_sayisi(sort: Desc)], map: "idx_etiketler_kullanim")
+  @@map("etiketler")
+}
+
+model Begeni {
+  begeni_id        Int       @id @default(autoincrement())
+  kullanici_id     Int
+  yazi_id          Int?
+  yorum_id         Int?
+  olusturma_tarihi DateTime? @default(now()) @db.Timestamp(6)
+  kullanicilar     Kullanici @relation(fields: [kullanici_id], references: [kullanici_id], onDelete: Cascade, onUpdate: NoAction)
+  yazilar          Yazi?     @relation(fields: [yazi_id], references: [yazi_id], onDelete: Cascade, onUpdate: NoAction)
+  yorumlar         Yorum?    @relation(fields: [yorum_id], references: [yorum_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([kullanici_id, yazi_id])
+  @@unique([kullanici_id, yorum_id])
+  @@index([kullanici_id], map: "idx_begeniler_kullanici")
+  @@index([yazi_id], map: "idx_begeniler_yazi")
+  @@index([yorum_id], map: "idx_begeniler_yorum")
+  @@map("begeniler")
+}
+
+model Takip {
+  takip_id                                            Int       @id @default(autoincrement())
+  takipci_id                                          Int
+  takip_edilen_id                                     Int
+  olusturma_tarihi                                    DateTime? @default(now()) @db.Timestamp(6)
+  kullanicilar_takipler_takip_edilen_idTokullanicilar Kullanici @relation("takipler_takip_edilen_idTokullanicilar", fields: [takip_edilen_id], references: [kullanici_id], onDelete: Cascade, onUpdate: NoAction)
+  kullanicilar_takipler_takipci_idTokullanicilar      Kullanici @relation("takipler_takipci_idTokullanicilar", fields: [takipci_id], references: [kullanici_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([takipci_id, takip_edilen_id])
+  @@index([takip_edilen_id], map: "idx_takipler_takip_edilen")
+  @@index([takipci_id], map: "idx_takipler_takipci")
+  @@map("takipler")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model bildirimler {
+  bildirim_id                                                    Int        @id @default(autoincrement())
+  kullanici_id                                                   Int
+  tetikleyen_kullanici_id                                        Int?
+  bildirim_turu                                                  String     @db.VarChar(50)
+  yazi_id                                                        Int?
+  yorum_id                                                       Int?
+  okundu_mu                                                      Boolean?   @default(false)
+  olusturma_tarihi                                               DateTime?  @default(now()) @db.Timestamp(6)
+  kullanicilar_bildirimler_kullanici_idTokullanicilar            Kullanici  @relation("bildirimler_kullanici_idTokullanicilar", fields: [kullanici_id], references: [kullanici_id], onDelete: Cascade, onUpdate: NoAction)
+  kullanicilar_bildirimler_tetikleyen_kullanici_idTokullanicilar Kullanici? @relation("bildirimler_tetikleyen_kullanici_idTokullanicilar", fields: [tetikleyen_kullanici_id], references: [kullanici_id], onDelete: Cascade, onUpdate: NoAction)
+  yazilar                                                        Yazi?      @relation(fields: [yazi_id], references: [yazi_id], onDelete: Cascade, onUpdate: NoAction)
+  yorumlar                                                       Yorum?     @relation(fields: [yorum_id], references: [yorum_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([kullanici_id], map: "idx_bildirimler_kullanici")
+  @@index([okundu_mu], map: "idx_bildirimler_okundu")
+  @@index([olusturma_tarihi(sort: Desc)], map: "idx_bildirimler_olusturma")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model kullanici_aktivite_loglari {
+  log_id           Int       @id @default(autoincrement())
+  kullanici_id     Int
+  aktivite_turu    String    @db.VarChar(50)
+  yazi_id          Int?
+  kategori_id      Int?
+  olusturma_tarihi DateTime? @default(now()) @db.Timestamp(6)
+  kategoriler      Kategori? @relation(fields: [kategori_id], references: [kategori_id], onUpdate: NoAction)
+  kullanicilar     Kullanici @relation(fields: [kullanici_id], references: [kullanici_id], onDelete: Cascade, onUpdate: NoAction)
+  yazilar          Yazi?     @relation(fields: [yazi_id], references: [yazi_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([kullanici_id], map: "idx_aktivite_loglari_kullanici")
+  @@index([olusturma_tarihi(sort: Desc)], map: "idx_aktivite_loglari_olusturma")
+  @@index([aktivite_turu], map: "idx_aktivite_loglari_tur")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model okuma_listeleri {
+  liste_id         Int       @id @default(autoincrement())
+  kullanici_id     Int
+  yazi_id          Int
+  okundu_mu        Boolean?  @default(false)
+  olusturma_tarihi DateTime? @default(now()) @db.Timestamp(6)
+  kullanicilar     Kullanici @relation(fields: [kullanici_id], references: [kullanici_id], onDelete: Cascade, onUpdate: NoAction)
+  yazilar          Yazi      @relation(fields: [yazi_id], references: [yazi_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([kullanici_id, yazi_id])
+  @@index([kullanici_id], map: "idx_okuma_listeleri_kullanici")
+  @@index([yazi_id], map: "idx_okuma_listeleri_yazi")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model raporlar {
+  rapor_id                                          Int        @id @default(autoincrement())
+  raporlayan_id                                     Int
+  yazi_id                                           Int?
+  yorum_id                                          Int?
+  hedef_tur                                         String     @db.VarChar(20)
+  hedef_id                                          Int?
+  rapor_neden                                       String     @db.VarChar(50)
+  aciklama                                          String?
+  durum                                             String?    @default("beklemede") @db.VarChar(20)
+  inceleyen_id                                      Int?
+  olusturma_tarihi                                  DateTime?  @default(now()) @db.Timestamp(6)
+  cozum_tarihi                                      DateTime?  @db.Timestamp(6)
+  kullanicilar_raporlar_inceleyen_idTokullanicilar  Kullanici? @relation("raporlar_inceleyen_idTokullanicilar", fields: [inceleyen_id], references: [kullanici_id], onUpdate: NoAction)
+  kullanicilar_raporlar_raporlayan_idTokullanicilar Kullanici  @relation("raporlar_raporlayan_idTokullanicilar", fields: [raporlayan_id], references: [kullanici_id], onDelete: Cascade, onUpdate: NoAction)
+  yazilar                                           Yazi?      @relation(fields: [yazi_id], references: [yazi_id], onDelete: Cascade, onUpdate: NoAction)
+  yorumlar                                          Yorum?     @relation(fields: [yorum_id], references: [yorum_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([durum], map: "idx_raporlar_durum")
+  @@index([yazi_id], map: "idx_raporlar_yazi")
+  @@index([yorum_id], map: "idx_raporlar_yorum")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model yazi_etiketleri {
+  yazi_etiket_id   Int       @id @default(autoincrement())
+  yazi_id          Int
+  etiket_id        Int
+  olusturma_tarihi DateTime? @default(now()) @db.Timestamp(6)
+  etiketler        Etiket    @relation(fields: [etiket_id], references: [etiket_id], onDelete: Cascade, onUpdate: NoAction)
+  yazilar          Yazi      @relation(fields: [yazi_id], references: [yazi_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([yazi_id, etiket_id])
+  @@index([etiket_id], map: "idx_yazi_etiketleri_etiket")
+  @@index([yazi_id], map: "idx_yazi_etiketleri_yazi")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model yazi_onerileri {
+  oneri_id                                         Int       @id @default(autoincrement())
+  yazi_id                                          Int
+  onerilen_yazi_id                                 Int
+  benzerlik_skoru                                  Decimal?  @db.Decimal(5, 4)
+  olusturma_tarihi                                 DateTime? @default(now()) @db.Timestamp(6)
+  yazilar_yazi_onerileri_onerilen_yazi_idToyazilar Yazi      @relation("yazi_onerileri_onerilen_yazi_idToyazilar", fields: [onerilen_yazi_id], references: [yazi_id], onDelete: Cascade, onUpdate: NoAction)
+  yazilar_yazi_onerileri_yazi_idToyazilar          Yazi      @relation("yazi_onerileri_yazi_idToyazilar", fields: [yazi_id], references: [yazi_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([yazi_id, onerilen_yazi_id])
+  @@index([benzerlik_skoru(sort: Desc)], map: "idx_yazi_onerileri_skor")
+  @@index([yazi_id], map: "idx_yazi_onerileri_yazi")
+}
+
+model yazi_kategorileri {
+  id               Int       @id @default(autoincrement())
+  yazi_id          Int
+  kategori_id      Int
+  olusturma_tarihi DateTime? @default(now()) @db.Timestamp(6)
+  kategoriler      Kategori  @relation(fields: [kategori_id], references: [kategori_id], onDelete: Cascade, onUpdate: NoAction)
+  yazilar          Yazi      @relation(fields: [yazi_id], references: [yazi_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([yazi_id, kategori_id])
+  @@map("yazi_kategorileri")
+}
+
+model SifreReset {
+  id           Int      @id @default(autoincrement())
+  kullanici_id Int
+  token        String
+  son_tarih    DateTime
+
+  kullanici Kullanici @relation(fields: [kullanici_id], references: [kullanici_id])
+}

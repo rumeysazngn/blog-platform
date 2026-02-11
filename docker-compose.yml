@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yusufgks2021
+      POSTGRES_DB: blog_platform
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+
+  ai-service:
+    build: ./ai-service
+    container_name: ai_service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  backend:
+    build: ./backend
+    container_name: blog_backend
+    ports:
+      - "5000:5000"
+      - "5555:5555"
+    depends_on:
+      - db
+      - redis
+      - ai-service
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+      - ./backend/uploads:/app/uploads
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+
+  frontend:
+    build: ./frontend
+    container_name: blog_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

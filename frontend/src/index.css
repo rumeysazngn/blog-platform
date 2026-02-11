@@ -1,0 +1,50 @@
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+/* örnek: global stiller*/
+
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(to bottom right, #0f172a, #3b0764, #1e1b4b);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+.bg-3d {
+  position: relative;
+  overflow: hidden;
+}
+
+.bg-3d::before,
+.bg-3d::after {
+  content: "";
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(255,255,255,0.3), transparent);
+  border-radius: 50%;
+  animation: float 12s infinite ease-in-out;
+}
+
+.bg-3d::before {
+  top: -150px;
+  left: -150px;
+}
+
+.bg-3d::after {
+  bottom: -150px;
+  right: -150px;
+  animation-duration: 18s;
+}
+
+@keyframes float {
+  0% { transform: translateY(0) translateX(0); }
+  50% { transform: translateY(-30px) translateX(30px); }
+  100% { transform: translateY(0) translateX(0); }
+}
+
